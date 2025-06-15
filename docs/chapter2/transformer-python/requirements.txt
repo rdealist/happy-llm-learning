@@ -1,0 +1,59 @@
+# Transformer-PyTorch 依赖包
+
+# 核心依赖
+torch>=1.9.0
+numpy>=1.19.0
+typing-extensions>=3.7.0
+
+# 数据处理
+pandas>=1.3.0
+datasets>=2.0.0
+tokenizers>=0.13.0
+
+# 可视化
+matplotlib>=3.3.0
+seaborn>=0.11.0
+plotly>=5.0.0
+
+# 进度条和工具
+tqdm>=4.60.0
+rich>=10.0.0
+
+# 配置管理
+pyyaml>=5.4.0
+omegaconf>=2.1.0
+
+# 日志和监控
+tensorboard>=2.5.0
+wandb>=0.12.0
+
+# Jupyter 支持
+jupyter>=1.0.0
+ipywidgets>=7.6.0
+
+# 开发工具
+pytest>=6.0.0
+pytest-cov>=2.10.0
+black>=21.0.0
+flake8>=3.8.0
+isort>=5.0.0
+mypy>=0.800
+pre-commit>=2.10.0
+
+# 文档生成
+sphinx>=4.0.0
+sphinx-rtd-theme>=0.5.0
+sphinx-autodoc-typehints>=1.10.0
+myst-parser>=0.15.0
+
+# 性能分析
+psutil>=5.8.0
+memory-profiler>=0.60.0
+
+# 模型保存和加载
+safetensors>=0.3.0
+huggingface-hub>=0.10.0
+
+# 科学计算
+scipy>=1.7.0
+scikit-learn>=1.0.0
