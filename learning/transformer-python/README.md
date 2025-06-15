@@ -1,6 +1,8 @@
 # Transformer-PyTorch
 
 > 基于 PyTorch 的 Transformer 架构实现，专为学习和研究设计
+>
+> **🆕 第三章扩展：预训练语言模型支持**
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
 [![PyTorch Version](https://img.shields.io/badge/pytorch-1.9%2B-orange.svg)](https://pytorch.org)
@@ -9,7 +11,7 @@
 
 ## 📖 项目简介
 
-Transformer-PyTorch 是一个完整的 Transformer 架构实现，基于《第二章 Transformer架构》文档中的理论知识，使用 PyTorch 框架构建。本项目提供了模块化、易于理解和使用的 Transformer 组件，支持 GPU 加速和现代深度学习最佳实践。
+Transformer-PyTorch 是一个完整的 Transformer 架构实现，基于《第二章 Transformer架构》和《第三章 预训练语言模型》文档中的理论知识，使用 PyTorch 框架构建。本项目提供了模块化、易于理解和使用的 Transformer 组件，现已扩展支持 BERT、GPT、T5 等主流预训练语言模型，支持 GPU 加速和现代深度学习最佳实践。
 
 ### ✨ 主要特性
 
@@ -20,16 +22,26 @@ Transformer-PyTorch 是一个完整的 Transformer 架构实现，基于《第�
 - 🎯 **教育友好** - 代码结构清晰，便于学习和理解 Transformer 原理
 - ⚡ **高性能** - 支持 GPU 加速、混合精度训练和批处理计算
 - 🔬 **研究导向** - 易于扩展和修改，适合研究和实验
+- 🤖 **预训练模型** - 支持 BERT、GPT、T5 等主流预训练语言模型
+- 📝 **预训练任务** - 实现 MLM、NSP、SOP、CLM 等预训练任务
 
 ### 🏗️ 架构组件
 
+#### 核心组件
 - **数学工具** - 激活函数、注意力计算、初始化函数
-- **基础层** - 线性层、层归一化、前馈网络、Dropout
+- **基础层** - 线性层、层归一化、RMSNorm、前馈网络、Dropout
 - **注意力机制** - 多头注意力、自注意力、交叉注意力、掩码工具
 - **嵌入层** - 词嵌入、正弦位置编码、可学习位置编码
 - **编码器** - Transformer 编码器层和编码器块
 - **解码器** - Transformer 解码器层和解码器块
 - **完整模型** - 端到端的 Transformer 模型，支持多种任务
+
+#### 预训练语言模型
+- **BERT 系列** - BERT、RoBERTa、ALBERT 等双向语言模型
+- **GPT 系列** - GPT、GPT-2 等自回归语言模型
+- **T5 模型** - 文本到文本转换的 Encoder-Decoder 模型
+- **分类头** - 序列分类、Token分类、语言建模、问答等任务头
+- **预训练任务** - MLM、NSP、SOP、CLM 等预训练任务实现
 
 ## 🚀 快速开始
 
@@ -86,6 +98,52 @@ model = Transformer(config)
 # 查看模型信息
 from transformer_pytorch import print_model_info
 print_model_info(model)
+```
+
+### 预训练语言模型使用
+
+```python
+from transformer_pytorch.models import ModelFactory
+
+# 创建BERT分类模型
+bert_model = ModelFactory.create_bert(
+    model_name='bert-base',
+    task_type='classification',
+    num_labels=2
+)
+
+# 创建GPT语言模型
+gpt_model = ModelFactory.create_gpt(
+    model_name='gpt2',
+    task_type='causal_lm'
+)
+
+# 创建T5条件生成模型
+t5_model = ModelFactory.create_t5(
+    model_name='t5-base',
+    task_type='conditional_generation'
+)
+
+# BERT文本分类
+input_ids = torch.randint(0, 1000, (2, 16))
+outputs = bert_model(input_ids=input_ids)
+predictions = torch.argmax(outputs['logits'], dim=-1)
+
+# GPT文本生成
+prompt = torch.randint(0, 1000, (1, 5))
+generated = gpt_model.generate(
+    input_ids=prompt,
+    max_length=20,
+    temperature=0.8,
+    do_sample=True
+)
+
+# T5文本转换
+src_ids = torch.randint(0, 1000, (1, 10))
+generated = t5_model.generate(
+    input_ids=src_ids,
+    max_length=15
+)
 ```
 
 ### GPU 加速

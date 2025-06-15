@@ -2,7 +2,7 @@
  * 嵌入层模块
  * 实现词嵌入和位置编码功能
  * 
- * @author Transformer-JS
+ * @author shihom_wu
  * @version 1.0.0
  */
 

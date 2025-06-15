@@ -12,13 +12,13 @@ Transformer-PyTorch: 基于 PyTorch 的 Transformer 架构实现
 - 🎯 教育友好 - 代码结构清晰，便于学习和理解
 - ⚡ 高性能 - 支持 GPU 加速和批处理计算
 
-作者: Transformer-PyTorch Team
+作者: shihom_wu
 版本: 1.0.0
 许可: MIT License
 """
 
 __version__ = "1.0.0"
-__author__ = "Transformer-PyTorch Team"
+__author__ = "shihom_wu"
 __email__ = "transformer-pytorch@example.com"
 __license__ = "MIT"
 

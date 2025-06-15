@@ -2,7 +2,7 @@
  * 注意力机制模块
  * 实现各种注意力机制，包括基础注意力、自注意力、多头注意力等
  * 
- * @author Transformer-JS
+ * @author shihom_wu
  * @version 1.0.0
  */
 
@@ -307,8 +307,103 @@ class MaskGenerator {
   }
   
   /**
+   * 创建MLM掩码
+   * 用于BERT等模型的掩码语言建模任务
+   *
+   * @param {Array<number>} tokenIds - 输入token序列
+   * @param {number} maskRatio - 掩码比例，默认0.15
+   * @param {number} maskTokenId - [MASK] token的ID，默认103
+   * @param {number} vocabSize - 词汇表大小，用于随机替换
+   * @returns {Object} {maskedTokens: 掩码后的序列, labels: 原始标签, maskPositions: 掩码位置}
+   */
+  static createMLMMask(tokenIds, maskRatio = 0.15, maskTokenId = 103, vocabSize = 30000) {
+    const seqLen = tokenIds.length;
+    const numMask = Math.floor(seqLen * maskRatio);
+    const maskedTokens = [...tokenIds];
+    const labels = new Array(seqLen).fill(-100); // -100表示不计算损失
+    const maskPositions = [];
+
+    // 随机选择要掩码的位置
+    const positions = [];
+    for (let i = 0; i < seqLen; i++) {
+      positions.push(i);
+    }
+
+    // Fisher-Yates洗牌算法
+    for (let i = positions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [positions[i], positions[j]] = [positions[j], positions[i]];
+    }
+
+    // 选择前numMask个位置进行掩码
+    for (let i = 0; i < numMask; i++) {
+      const pos = positions[i];
+      labels[pos] = tokenIds[pos]; // 保存原始token用于计算损失
+      maskPositions.push(pos);
+
+      const rand = Math.random();
+      if (rand < 0.8) {
+        // 80%的概率替换为[MASK]
+        maskedTokens[pos] = maskTokenId;
+      } else if (rand < 0.9) {
+        // 10%的概率替换为随机token
+        maskedTokens[pos] = Math.floor(Math.random() * vocabSize);
+      }
+      // 10%的概率保持不变
+    }
+
+    return {
+      maskedTokens,
+      labels,
+      maskPositions
+    };
+  }
+
+  /**
+   * 创建双向注意力掩码
+   * 用于BERT等双向模型，允许每个位置关注所有位置
+   *
+   * @param {number} seqLen - 序列长度
+   * @returns {Array<Array<number>>} 全1的掩码矩阵
+   */
+  static createBidirectionalMask(seqLen) {
+    const mask = [];
+
+    for (let i = 0; i < seqLen; i++) {
+      const row = new Array(seqLen).fill(1);
+      mask.push(row);
+    }
+
+    return mask;
+  }
+
+  /**
+   * 创建填充掩码
+   * 用于忽略填充token的注意力计算
+   *
+   * @param {Array<number>} tokenIds - token序列
+   * @param {number} padTokenId - 填充token ID，默认0
+   * @returns {Array<Array<number>>} 填充掩码矩阵
+   */
+  static createPaddingMask(tokenIds, padTokenId = 0) {
+    const seqLen = tokenIds.length;
+    const mask = [];
+
+    for (let i = 0; i < seqLen; i++) {
+      const row = [];
+      for (let j = 0; j < seqLen; j++) {
+        // 如果目标位置是填充token，则掩码为0（不关注）
+        row.push(tokenIds[j] !== padTokenId ? 1 : 0);
+      }
+      mask.push(row);
+    }
+
+    return mask;
+  }
+
+  /**
    * 组合多个掩码
-   * 
+   *
    * @param {Array<Array<Array<number>>>} masks - 掩码数组
    * @returns {Array<Array<number>>} 组合后的掩码
    */
@@ -316,10 +411,10 @@ class MaskGenerator {
     if (!masks || masks.length === 0) {
       return null;
     }
-    
+
     const seqLen = masks[0].length;
     const combinedMask = [];
-    
+
     for (let i = 0; i < seqLen; i++) {
       const row = [];
       for (let j = 0; j < seqLen; j++) {
@@ -332,7 +427,7 @@ class MaskGenerator {
       }
       combinedMask.push(row);
     }
-    
+
     return combinedMask;
   }
 }

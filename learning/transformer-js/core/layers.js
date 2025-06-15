@@ -2,7 +2,7 @@
  * 基础层模块
  * 实现 Transformer 模型的基础组件层
  * 
- * @author Transformer-JS
+ * @author shihom_wu
  * @version 1.0.0
  */
 
@@ -341,11 +341,118 @@ class ResidualConnection {
   }
 }
 
+/**
+ * RMS归一化层
+ * 用于T5等模型，相比LayerNorm更简单高效
+ */
+class RMSNorm {
+  /**
+   * 构造函数
+   *
+   * @param {number} normalizedShape - 归一化的维度
+   * @param {number} eps - 数值稳定性参数，默认1e-6
+   */
+  constructor(normalizedShape, eps = 1e-6) {
+    this.normalizedShape = normalizedShape;
+    this.eps = eps;
+
+    // 可学习的缩放参数
+    this.weight = new Array(normalizedShape).fill(1.0);
+  }
+
+  /**
+   * 前向传播
+   *
+   * @param {Array<number>|Array<Array<number>>} x - 输入数据
+   * @returns {Array<number>|Array<Array<number>>} 归一化后的数据
+   */
+  forward(x) {
+    if (Array.isArray(x[0])) {
+      // 二维输入 [seqLen, hiddenSize]
+      return x.map(row => this._normalizeVector(row));
+    } else {
+      // 一维输入 [hiddenSize]
+      return this._normalizeVector(x);
+    }
+  }
+
+  /**
+   * 归一化单个向量
+   *
+   * @param {Array<number>} vector - 输入向量
+   * @returns {Array<number>} 归一化后的向量
+   */
+  _normalizeVector(vector) {
+    // 计算均方根
+    const sumSquares = vector.reduce((sum, val) => sum + val * val, 0);
+    const rms = Math.sqrt(sumSquares / vector.length + this.eps);
+
+    // 归一化并应用可学习参数
+    return vector.map((val, i) => (val / rms) * this.weight[i]);
+  }
+
+  /**
+   * 获取参数数量
+   *
+   * @returns {number} 参数总数
+   */
+  getParameterCount() {
+    return this.normalizedShape;
+  }
+
+  /**
+   * 设置训练模式
+   *
+   * @param {boolean} training - 是否为训练模式
+   */
+  setTraining(training) {
+    // RMSNorm在训练和推理时行为一致
+    this.training = training;
+  }
+}
+
+/**
+ * GELU激活函数
+ * 用于BERT等模型的激活函数
+ */
+class GELU {
+  /**
+   * 前向传播
+   *
+   * @param {Array<number>|Array<Array<number>>} x - 输入数据
+   * @returns {Array<number>|Array<Array<number>>} 激活后的数据
+   */
+  static forward(x) {
+    if (Array.isArray(x[0])) {
+      // 二维输入
+      return x.map(row => row.map(val => GELU._gelu(val)));
+    } else {
+      // 一维输入
+      return x.map(val => GELU._gelu(val));
+    }
+  }
+
+  /**
+   * GELU激活函数的具体实现
+   *
+   * @param {number} x - 输入值
+   * @returns {number} 激活后的值
+   */
+  static _gelu(x) {
+    // GELU(x) = 0.5 * x * (1 + tanh(sqrt(2/π) * (x + 0.044715 * x^3)))
+    const sqrt2OverPi = Math.sqrt(2 / Math.PI);
+    const inner = sqrt2OverPi * (x + 0.044715 * Math.pow(x, 3));
+    return 0.5 * x * (1 + Math.tanh(inner));
+  }
+}
+
 // 导出所有类
 module.exports = {
   Linear,
   LayerNorm,
+  RMSNorm,
   Dropout,
   MLP,
-  ResidualConnection
+  ResidualConnection,
+  GELU
 };

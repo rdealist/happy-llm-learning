@@ -2,7 +2,7 @@
  * 完整的 Transformer 模型
  * 组合编码器、解码器、嵌入层等组件构建完整的 Transformer 架构
  * 
- * @author Transformer-JS
+ * @author shihom_wu
  * @version 1.0.0
  */
 

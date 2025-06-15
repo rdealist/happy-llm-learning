@@ -2,7 +2,7 @@
  * 数学工具函数模块
  * 提供 Transformer 模型所需的基础数学运算函数
  * 
- * @author Transformer-JS
+ * @author shihom_wu
  * @version 1.0.0
  */
 

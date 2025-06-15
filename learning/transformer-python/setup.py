@@ -3,7 +3,7 @@ Transformer-PyTorch 安装脚本
 
 基于 PyTorch 的 Transformer 架构实现包。
 
-作者: Transformer-PyTorch Team
+作者: shihom_wu
 版本: 1.0.0
 """
 
@@ -48,7 +48,7 @@ def get_requirements():
 setup(
     name="transformer-pytorch",
     version=get_version(),
-    author="Transformer-PyTorch Team",
+    author="shihom_wu",
     author_email="transformer-pytorch@example.com",
     description="基于 PyTorch 的 Transformer 架构实现",
     long_description=read_readme(),

@@ -2,7 +2,7 @@
  * 解码器模块
  * 实现 Transformer 解码器层和解码器块
  * 
- * @author Transformer-JS
+ * @author shihom_wu
  * @version 1.0.0
  */
 
