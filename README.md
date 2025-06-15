@@ -1,5 +1,4 @@
 <div align='center'>
-    <img src="./images/head.jpg" alt="Transformer Learning Project" width="100%">
     <h1>Transformer 架构学习与实现项目</h1>
 </div>
 
@@ -620,8 +619,9 @@ A: 使用 `torch.save()` 和 `torch.load()`，参考 examples 中的示例。
 ## 🙏 致谢
 
 ### 核心贡献者
-- **shihom_wu** - 项目作者和主要开发者
-- 欢迎更多贡献者加入我们的团队！
+- [宋志学-项目负责人](https://github.com/KMnO4-zx) (Datawhale成员-中国矿业大学(北京))
+- [邹雨衡-项目负责人](https://github.com/logan-zou) (Datawhale成员-对外经济贸易大学)
+- [朱信忠-指导专家](https://xinzhongzhu.github.io/)（Datawhale首席科学家-浙江师范大学杭州人工智能研究院教授）
 
 ### 特别感谢
 - **理论基础**: 感谢 Vaswani 等人的开创性论文 "Attention Is All You Need"
