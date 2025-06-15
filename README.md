@@ -618,14 +618,14 @@ A: 使用 `torch.save()` 和 `torch.load()`，参考 examples 中的示例。
 
 ## 🙏 致谢
 
-### 核心贡献者
+### happy-llm核心贡献者
 - [宋志学-项目负责人](https://github.com/KMnO4-zx) (Datawhale成员-中国矿业大学(北京))
 - [邹雨衡-项目负责人](https://github.com/logan-zou) (Datawhale成员-对外经济贸易大学)
 - [朱信忠-指导专家](https://xinzhongzhu.github.io/)（Datawhale首席科学家-浙江师范大学杭州人工智能研究院教授）
 
 ### 特别感谢
 - **理论基础**: 感谢 Vaswani 等人的开创性论文 "Attention Is All You Need"
-- **文档支持**: 感谢《第二章 Transformer架构》和《第三章 预训练语言模型》文档
+- **文档支持**: 感谢 [Happy-LLM 项目](https://github.com/datawhalechina/happy-llm) 提供的系统性 LLM 学习教程和理论基础
 - **开源社区**: 感谢所有为开源社区做出贡献的开发者们 ❤️
 - **技术支持**: 感谢 PyTorch、JavaScript 社区的技术支持
 
