@@ -33,38 +33,61 @@ class TokenEmbedding {
   
   /**
    * 前向传播
-   * 
-   * @param {Array<Array<number>>} tokenIds - 词元ID矩阵 [batchSize, seqLen]
-   * @returns {Array<Array<Array<number>>>} 嵌入矩阵 [batchSize, seqLen, embedDim]
+   *
+   * @param {Array<number>|Array<Array<number>>} tokenIds - 词元ID数组或矩阵
+   * @returns {Array<Array<number>>|Array<Array<Array<number>>>} 嵌入矩阵
    */
   forward(tokenIds) {
     if (!Array.isArray(tokenIds) || tokenIds.length === 0) {
-      throw new Error('输入必须是非空二维数组');
+      throw new Error('输入必须是非空数组');
     }
-    
-    const batchSize = tokenIds.length;
-    const seqLen = tokenIds[0].length;
-    const embeddings = [];
-    
-    for (let b = 0; b < batchSize; b++) {
-      const batchEmbeddings = [];
-      
-      for (let s = 0; s < seqLen; s++) {
-        const tokenId = tokenIds[b][s];
-        
+
+    // 检查是一维还是二维输入
+    const is1D = !Array.isArray(tokenIds[0]);
+
+    if (is1D) {
+      // 一维输入：[seqLen] -> [seqLen, embedDim]
+      const embeddings = [];
+
+      for (let s = 0; s < tokenIds.length; s++) {
+        const tokenId = tokenIds[s];
+
         // 检查词元ID是否有效
         if (tokenId < 0 || tokenId >= this.vocabSize) {
           throw new Error(`无效的词元ID: ${tokenId}，应在 [0, ${this.vocabSize}) 范围内`);
         }
-        
+
         // 查找对应的嵌入向量
-        batchEmbeddings.push([...this.weight[tokenId]]);
+        embeddings.push([...this.weight[tokenId]]);
       }
-      
-      embeddings.push(batchEmbeddings);
+
+      return embeddings;
+    } else {
+      // 二维输入：[batchSize, seqLen] -> [batchSize, seqLen, embedDim]
+      const batchSize = tokenIds.length;
+      const seqLen = tokenIds[0].length;
+      const embeddings = [];
+
+      for (let b = 0; b < batchSize; b++) {
+        const batchEmbeddings = [];
+
+        for (let s = 0; s < seqLen; s++) {
+          const tokenId = tokenIds[b][s];
+
+          // 检查词元ID是否有效
+          if (tokenId < 0 || tokenId >= this.vocabSize) {
+            throw new Error(`无效的词元ID: ${tokenId}，应在 [0, ${this.vocabSize}) 范围内`);
+          }
+
+          // 查找对应的嵌入向量
+          batchEmbeddings.push([...this.weight[tokenId]]);
+        }
+
+        embeddings.push(batchEmbeddings);
+      }
+
+      return embeddings;
     }
-    
-    return embeddings;
   }
   
   /**

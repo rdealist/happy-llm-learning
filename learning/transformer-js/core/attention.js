@@ -257,6 +257,210 @@ class MultiHeadAttention {
 }
 
 /**
+ * 分组查询注意力机制 (Grouped Query Attention, GQA)
+ * LLaMA2中使用的注意力机制，是多头注意力和多查询注意力的折中方案
+ */
+class GroupedQueryAttention {
+  /**
+   * 构造函数
+   *
+   * @param {number} dModel - 模型维度
+   * @param {number} nHeads - 查询头数
+   * @param {number} nKVHeads - 键值头数（必须能被 nHeads 整除）
+   * @param {number} dropout - Dropout 概率，默认为 0.1
+   * @param {boolean} useBias - 是否使用偏置，默认为 false
+   */
+  constructor(dModel, nHeads, nKVHeads, dropout = 0.1, useBias = false) {
+    if (dModel % nHeads !== 0) {
+      throw new Error(`模型维度 ${dModel} 必须能被查询头数 ${nHeads} 整除`);
+    }
+    if (nHeads % nKVHeads !== 0) {
+      throw new Error(`查询头数 ${nHeads} 必须能被键值头数 ${nKVHeads} 整除`);
+    }
+
+    this.dModel = dModel;
+    this.nHeads = nHeads;
+    this.nKVHeads = nKVHeads;
+    this.dK = dModel / nHeads; // 每个查询头的维度
+    this.dKV = dModel / nKVHeads; // 每个键值头的维度
+    this.nQueriesPerKV = nHeads / nKVHeads; // 每个键值头对应的查询头数
+
+    // Q, K, V 的线性变换层
+    this.wQ = new Linear(dModel, nHeads * this.dK, useBias);
+    this.wK = new Linear(dModel, nKVHeads * this.dK, useBias);
+    this.wV = new Linear(dModel, nKVHeads * this.dK, useBias);
+
+    // 输出投影层
+    this.wO = new Linear(dModel, dModel, useBias);
+
+    // 基础注意力机制
+    this.attention = new Attention(dropout);
+  }
+
+  /**
+   * 前向传播
+   *
+   * @param {Array<Array<number>>} query - 查询矩阵 [seqLen, dModel]
+   * @param {Array<Array<number>>} key - 键矩阵 [seqLen, dModel]
+   * @param {Array<Array<number>>} value - 值矩阵 [seqLen, dModel]
+   * @param {Array<Array<number>>|null} mask - 注意力掩码，可选
+   * @returns {Object} {output: 分组查询注意力输出, attention: 注意力权重}
+   */
+  forward(query, key, value, mask = null) {
+    const seqLen = query.length;
+
+    // 线性变换得到 Q, K, V
+    const Q = this.wQ.forward(query);
+    const K = this.wK.forward(key);
+    const V = this.wV.forward(value);
+
+    // 重塑为多头形状并分割
+    const QHeads = this._splitQueryHeads(Q);
+    const KHeads = this._splitKVHeads(K);
+    const VHeads = this._splitKVHeads(V);
+
+    // 扩展键值头以匹配查询头数
+    const expandedKHeads = this._expandKVHeads(KHeads);
+    const expandedVHeads = this._expandKVHeads(VHeads);
+
+    // 对每个头计算注意力
+    const headOutputs = [];
+    const headAttentions = [];
+
+    for (let h = 0; h < this.nHeads; h++) {
+      const result = this.attention.forward(
+        QHeads[h],
+        expandedKHeads[h],
+        expandedVHeads[h],
+        mask
+      );
+
+      headOutputs.push(result.output);
+      headAttentions.push(result.attention);
+    }
+
+    // 拼接所有头的输出
+    const concatenated = this._concatHeads(headOutputs);
+
+    // 最终的线性投影
+    const output = this.wO.forward(concatenated);
+
+    return {
+      output: output,
+      attention: headAttentions
+    };
+  }
+
+  /**
+   * 将查询输入分割为多个注意力头
+   *
+   * @param {Array<Array<number>>} x - 输入矩阵 [seqLen, nHeads * dK]
+   * @returns {Array<Array<Array<number>>>} 分割后的头 [nHeads][seqLen, dK]
+   */
+  _splitQueryHeads(x) {
+    const seqLen = x.length;
+    const heads = [];
+
+    for (let h = 0; h < this.nHeads; h++) {
+      const head = [];
+      for (let i = 0; i < seqLen; i++) {
+        const start = h * this.dK;
+        const end = start + this.dK;
+        head.push(x[i].slice(start, end));
+      }
+      heads.push(head);
+    }
+
+    return heads;
+  }
+
+  /**
+   * 将键值输入分割为多个注意力头
+   *
+   * @param {Array<Array<number>>} x - 输入矩阵 [seqLen, nKVHeads * dK]
+   * @returns {Array<Array<Array<number>>>} 分割后的头 [nKVHeads][seqLen, dK]
+   */
+  _splitKVHeads(x) {
+    const seqLen = x.length;
+    const heads = [];
+
+    for (let h = 0; h < this.nKVHeads; h++) {
+      const head = [];
+      for (let i = 0; i < seqLen; i++) {
+        const start = h * this.dK;
+        const end = start + this.dK;
+        head.push(x[i].slice(start, end));
+      }
+      heads.push(head);
+    }
+
+    return heads;
+  }
+
+  /**
+   * 扩展键值头以匹配查询头数
+   *
+   * @param {Array<Array<Array<number>>>} kvHeads - 键值头 [nKVHeads][seqLen, dK]
+   * @returns {Array<Array<Array<number>>>} 扩展后的头 [nHeads][seqLen, dK]
+   */
+  _expandKVHeads(kvHeads) {
+    const expandedHeads = [];
+
+    for (let kvIdx = 0; kvIdx < this.nKVHeads; kvIdx++) {
+      for (let rep = 0; rep < this.nQueriesPerKV; rep++) {
+        expandedHeads.push(kvHeads[kvIdx]);
+      }
+    }
+
+    return expandedHeads;
+  }
+
+  /**
+   * 拼接多个注意力头的输出
+   *
+   * @param {Array<Array<Array<number>>>} heads - 多个头的输出 [nHeads][seqLen, dK]
+   * @returns {Array<Array<number>>} 拼接后的矩阵 [seqLen, dModel]
+   */
+  _concatHeads(heads) {
+    const seqLen = heads[0].length;
+    const concatenated = [];
+
+    for (let i = 0; i < seqLen; i++) {
+      const row = [];
+      for (let h = 0; h < this.nHeads; h++) {
+        row.push(...heads[h][i]);
+      }
+      concatenated.push(row);
+    }
+
+    return concatenated;
+  }
+
+  /**
+   * 设置训练模式
+   *
+   * @param {boolean} training - 是否为训练模式
+   */
+  setTraining(training) {
+    this.attention.setTraining(training);
+  }
+
+  /**
+   * 获取参数数量
+   *
+   * @returns {number} 参数总数
+   */
+  getParameterCount() {
+    return (
+      this.wQ.getParameterCount() +
+      this.wK.getParameterCount() +
+      this.wV.getParameterCount() +
+      this.wO.getParameterCount()
+    );
+  }
+}
+
+/**
  * 掩码生成工具
  * 生成各种类型的注意力掩码
  */
@@ -436,5 +640,6 @@ class MaskGenerator {
 module.exports = {
   Attention,
   MultiHeadAttention,
+  GroupedQueryAttention,
   MaskGenerator
 };

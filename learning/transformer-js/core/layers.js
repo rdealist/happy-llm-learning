@@ -446,6 +446,85 @@ class GELU {
   }
 }
 
+/**
+ * SwiGLU激活函数
+ * LLaMA2模型中使用的激活函数，结合Swish激活和门控机制
+ */
+class SwiGLU {
+  /**
+   * 构造函数
+   *
+   * @param {number} inputDim - 输入维度
+   * @param {number} hiddenDim - 隐藏层维度
+   * @param {boolean} useBias - 是否使用偏置，默认为 false
+   */
+  constructor(inputDim, hiddenDim, useBias = false) {
+    this.inputDim = inputDim;
+    this.hiddenDim = hiddenDim;
+
+    // 门控投影层
+    this.gateProj = new Linear(inputDim, hiddenDim, useBias);
+
+    // 上投影层
+    this.upProj = new Linear(inputDim, hiddenDim, useBias);
+  }
+
+  /**
+   * 前向传播
+   * 实现 SwiGLU(x) = Swish(xW_gate) ⊙ (xW_up)
+   *
+   * @param {Array<Array<number>>} x - 输入矩阵 [batchSize, inputDim]
+   * @returns {Array<Array<number>>} 输出矩阵 [batchSize, hiddenDim]
+   */
+  forward(x) {
+    // 门控分支：应用Swish激活函数
+    const gateOutput = this.gateProj.forward(x);
+    const gateActivated = gateOutput.map(row =>
+      row.map(val => SwiGLU._swish(val))
+    );
+
+    // 上投影分支
+    const upOutput = this.upProj.forward(x);
+
+    // 逐元素相乘（门控机制）
+    const output = gateActivated.map((row, i) =>
+      row.map((val, j) => val * upOutput[i][j])
+    );
+
+    return output;
+  }
+
+  /**
+   * Swish激活函数实现
+   * Swish(x) = x * sigmoid(x)
+   *
+   * @param {number} x - 输入值
+   * @returns {number} 激活后的值
+   */
+  static _swish(x) {
+    return x * (1 / (1 + Math.exp(-x))); // x * sigmoid(x)
+  }
+
+  /**
+   * 获取参数数量
+   *
+   * @returns {number} 参数总数
+   */
+  getParameterCount() {
+    return this.gateProj.getParameterCount() + this.upProj.getParameterCount();
+  }
+
+  /**
+   * 设置训练模式
+   *
+   * @param {boolean} training - 是否为训练模式
+   */
+  setTraining(training) {
+    // SwiGLU在训练和推理时行为一致
+    this.training = training;
+  }
+}
+
 // 导出所有类
 module.exports = {
   Linear,
@@ -454,5 +533,6 @@ module.exports = {
   Dropout,
   MLP,
   ResidualConnection,
-  GELU
+  GELU,
+  SwiGLU
 };
