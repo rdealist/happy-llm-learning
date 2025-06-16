@@ -17,7 +17,7 @@
 
 ## 🎯 项目简介
 
-本项目是一个完整的 **Transformer 架构学习与实现项目**，提供了 JavaScript 和 Python 两个版本的完整实现。项目基于《第二章 Transformer架构》和《第三章 预训练语言模型》的理论知识，将复杂的 Transformer 架构转化为易于理解和使用的代码实现。
+本项目是一个完整的 **Transformer 架构学习与实现项目**，提供了 JavaScript 和 Python 两个版本的完整实现。项目基于 Happy-LLM 项目的系统性理论知识，特别是《第二章 Transformer架构》、《第三章 预训练语言模型》、《第四章 大语言模型》和《第五章 动手搭建大模型》，将复杂的 Transformer 架构和现代 LLM 技术转化为易于理解和使用的代码实现。
 
 ### ✨ 项目特色
 
@@ -25,8 +25,9 @@
 - 📱 **多平台支持** - 浏览器、Node.js、微信小程序、服务器端
 - 📚 **教育友好** - 详细的中文注释和完整的学习文档
 - 🔧 **模块化设计** - 每个组件独立实现，支持按需使用
-- 🤖 **预训练模型** - 支持 BERT、GPT、T5 等主流模型
-- ⚡ **性能优化** - 针对不同环境的专门优化
+- 🤖 **现代LLM架构** - 完整的 LLaMA2 实现，支持 BERT、GPT、T5 等主流模型
+- ⚡ **性能优化** - 分组查询注意力(GQA)、RMSNorm等先进技术
+- 🎯 **理论实践结合** - 基于第四章和第五章理论的完整实现
 
 ## 📁 项目结构
 
@@ -36,9 +37,9 @@ learning/
 │   ├── core/                         # 核心组件
 │   │   ├── math-utils.js             # 数学工具函数
 │   │   ├── matrix-ops.js             # 矩阵运算
-│   │   ├── layers.js                 # 基础神经网络层
-│   │   ├── attention.js              # 注意力机制
-│   │   ├── embedding.js              # 嵌入层
+│   │   ├── layers.js                 # 基础层(含RMSNorm、SwiGLU)
+│   │   ├── attention.js              # 注意力机制(含GQA)
+│   │   ├── embedding.js              # 嵌入层(含RoPE)
 │   │   ├── encoder.js                # 编码器
 │   │   ├── decoder.js                # 解码器
 │   │   ├── transformer.js            # 完整模型
@@ -49,23 +50,29 @@ learning/
 │   │   ├── bert.js                   # BERT 系列模型
 │   │   ├── gpt.js                    # GPT 系列模型
 │   │   ├── t5.js                     # T5 模型
+│   │   ├── llama2.js                 # LLaMA2 完整实现 ⭐
 │   │   └── config.js                 # 模型配置
 │   ├── config/                       # 配置文件
 │   ├── examples/                     # 使用示例
+│   │   └── llama2-example.js         # LLaMA2 使用示例 ⭐
 │   ├── tests/                        # 测试文件
 │   └── docs/                         # 详细文档
 ├── transformer-python/               # Python 版本实现
 │   ├── transformer_pytorch/          # 主包
 │   │   ├── core/                     # 核心组件
 │   │   │   ├── math_utils.py         # 数学工具函数
-│   │   │   ├── layers.py             # 基础神经网络层
-│   │   │   ├── attention.py          # 注意力机制
-│   │   │   ├── embedding.py          # 嵌入层
+│   │   │   ├── layers.py             # 基础层(含RMSNorm、SwiGLU)
+│   │   │   ├── attention.py          # 注意力机制(含GQA)
+│   │   │   ├── embedding.py          # 嵌入层(含RoPE)
 │   │   │   ├── encoder.py            # 编码器
 │   │   │   ├── decoder.py            # 解码器
 │   │   │   └── transformer.py        # 完整模型
+│   │   ├── models/                   # 预训练语言模型
+│   │   │   └── llama2.py             # LLaMA2 完整实现 ⭐
 │   │   └── config/                   # 配置管理
 │   ├── examples/                     # 使用示例
+│   │   ├── llama2_example.py         # LLaMA2 使用示例 ⭐
+│   │   └── llama2_simple_test.py     # 简化测试 ⭐
 │   ├── tests/                        # 单元测试
 │   ├── notebooks/                    # Jupyter 教程
 │   ├── docs/                         # 详细文档
@@ -73,7 +80,8 @@ learning/
 │   └── setup.py                      # 包安装脚本
 ├── TRANSFORMER_IMPLEMENTATIONS_COMPARISON.md  # 实现对比总结
 ├── transformer-architecture-guide.md          # 架构实现指南
-└── CHAPTER3_IMPLEMENTATION_SUMMARY.md         # 第三章实现总结
+├── CHAPTER3_IMPLEMENTATION_SUMMARY.md         # 第三章实现总结
+└── CHAPTER4_CHAPTER5_IMPLEMENTATION_SUMMARY.md # 第四章和第五章实现总结 ⭐
 ```
 
 ## 🚀 快速开始
@@ -99,6 +107,25 @@ const result = model.forward(srcTokens, tgtTokens);
 console.log('输出维度:', result.logits.length, 'x', result.logits[0].length);
 ```
 
+#### LLaMA2 模型使用 ⭐
+```javascript
+const { LLaMA2Config, LLaMA2ForCausalLM } = require('./learning/transformer-js/models/llama2');
+
+// 创建微信小程序优化的LLaMA2模型
+const config = LLaMA2Config.miniprogram();
+const model = new LLaMA2ForCausalLM(config);
+
+// 文本生成
+const prompt = [1, 123, 456, 789];  // BOS + 输入词元
+const generated = model.generate(prompt, {
+  maxNewTokens: 20,
+  temperature: 0.8,
+  doSample: true
+});
+
+console.log('生成结果:', generated);
+```
+
 #### BERT 模型使用
 ```javascript
 const { ModelFactory } = require('./learning/transformer-js/models/config');
@@ -122,6 +149,27 @@ pip install -r requirements.txt
 
 # 或者安装为包
 pip install -e .
+```
+
+#### LLaMA2 模型使用 ⭐
+```python
+import torch
+from transformer_pytorch.models.llama2 import LLaMA2Config, LLaMA2ForCausalLM
+
+# 创建LLaMA2模型
+config = LLaMA2Config.llama2_7b()  # 或使用其他配置
+model = LLaMA2ForCausalLM(config)
+
+# 文本生成
+input_ids = torch.tensor([[1, 123, 456, 789]])  # BOS + 输入词元
+generated = model.generate(
+    input_ids,
+    max_new_tokens=50,
+    temperature=0.8,
+    do_sample=True
+)
+
+print(f'生成结果: {generated[0].tolist()}')
 ```
 
 #### 基础使用
@@ -158,17 +206,22 @@ print(f'输出形状: {output["logits"].shape}')
 
 | 组件 | JavaScript 版本 | Python 版本 | 功能描述 |
 |------|----------------|-------------|----------|
-| **注意力机制** | `attention.js` | `attention.py` | 多头自注意力、交叉注意力 |
-| **嵌入层** | `embedding.js` | `embedding.py` | 词嵌入、位置编码 |
+| **注意力机制** | `attention.js` | `attention.py` | 多头自注意力、交叉注意力、GQA ⭐ |
+| **嵌入层** | `embedding.js` | `embedding.py` | 词嵌入、位置编码、RoPE ⭐ |
 | **编码器** | `encoder.js` | `encoder.py` | Transformer 编码器层 |
 | **解码器** | `decoder.js` | `decoder.py` | Transformer 解码器层 |
-| **基础层** | `layers.js` | `layers.py` | LayerNorm、MLP、Dropout |
+| **基础层** | `layers.js` | `layers.py` | LayerNorm、RMSNorm、SwiGLU ⭐ |
 | **完整模型** | `transformer.js` | `transformer.py` | 端到端 Transformer |
+| **LLaMA2模型** | `llama2.js` | `llama2.py` | 完整LLaMA2实现 ⭐ |
 
 ### 预训练模型支持
 
+- **LLaMA2 系列** - 现代大语言模型架构 ⭐
+  - 支持7B、13B、70B等多种规模
+  - 分组查询注意力(GQA)优化
+  - RMSNorm和SwiGLU激活函数
 - **BERT 系列** - 双向编码器表示
-- **GPT 系列** - 自回归语言模型  
+- **GPT 系列** - 自回归语言模型
 - **T5 模型** - 文本到文本转换
 - **预训练任务** - MLM、NSP、SOP、CLM
 
@@ -208,8 +261,11 @@ print(f'输出形状: {output["logits"].shape}')
 - [📖 Transformer 架构实现指南](./learning/transformer-architecture-guide.md)
 - [🔄 双版本实现对比总结](./learning/TRANSFORMER_IMPLEMENTATIONS_COMPARISON.md)
 - [📝 第三章实现总结](./learning/CHAPTER3_IMPLEMENTATION_SUMMARY.md)
+- [⭐ 第四章和第五章实现总结](./learning/CHAPTER4_CHAPTER5_IMPLEMENTATION_SUMMARY.md) - **最新**
 
 ### 代码示例
+- [⭐ LLaMA2 JavaScript示例](./learning/transformer-js/examples/llama2-example.js) - **最新**
+- [⭐ LLaMA2 Python示例](./learning/transformer-python/examples/llama2_example.py) - **最新**
 - [JavaScript 基础示例](./learning/transformer-js/examples/)
 - [Python Jupyter 教程](./learning/transformer-python/notebooks/)
 - [预训练模型使用](./learning/transformer-js/examples/bert-example.js)
@@ -279,6 +335,9 @@ black>=21.0.0         # 代码格式化
 ```bash
 cd learning/transformer-js
 
+# 运行LLaMA2示例 ⭐ (推荐)
+node examples/llama2-example.js
+
 # 运行单元测试
 node tests/unit-tests.js
 
@@ -295,6 +354,12 @@ node examples/bert-example.js
 ### Python 版本测试
 ```bash
 cd learning/transformer-python
+
+# 运行LLaMA2简化测试 ⭐ (推荐，无需PyTorch)
+python examples/llama2_simple_test.py
+
+# 运行LLaMA2完整示例 (需要PyTorch)
+python examples/llama2_example.py
 
 # 运行所有测试
 pytest tests/ -v
@@ -322,27 +387,36 @@ jupyter notebook notebooks/
 2. **实践入门**
    ```bash
    cd learning/transformer-js
+   # 推荐从LLaMA2开始 ⭐
+   node examples/llama2-example.js
+   # 或运行基础示例
    node examples/basic-usage.js
    ```
 
 3. **深入理解**
-   - 查看核心组件实现
+   - 查看LLaMA2核心组件实现 ⭐
+   - 理解GQA、RMSNorm、SwiGLU等先进技术
    - 运行注意力可视化示例
 
 ### 进阶用户路径
 1. **Python 版本学习**
    ```bash
    cd learning/transformer-python
+   # 推荐从LLaMA2开始 ⭐
+   python examples/llama2_simple_test.py
+   # 或运行Jupyter教程
    jupyter notebook notebooks/01_basic_concepts.ipynb
    ```
 
 2. **模型训练实践**
    - 学习 PyTorch 基础
-   - 运行训练示例
+   - 运行LLaMA2训练示例 ⭐
+   - 理解三阶段训练流程(Pretrain→SFT→RLHF)
 
 3. **自定义开发**
-   - 修改模型架构
+   - 修改LLaMA2模型架构 ⭐
    - 实现新的注意力机制
+   - 优化GQA和RMSNorm组件
 
 ### 专家用户路径
 1. **性能优化**
@@ -382,13 +456,22 @@ jupyter notebook notebooks/
 ## 🔧 高级功能
 
 ### JavaScript 版本高级功能
-- **模型配置**: 支持 4 种预设配置（small/default/large/miniprogram）
+- **LLaMA2完整实现**: 支持7B/13B/70B等多种配置 ⭐
+- **分组查询注意力(GQA)**: 优化的注意力机制，减少计算复杂度 ⭐
+- **RMSNorm归一化**: 高效的归一化方法 ⭐
+- **SwiGLU激活函数**: 门控激活函数，提升模型性能 ⭐
+- **微信小程序优化**: 专门的轻量化配置
 - **注意力可视化**: 内置注意力权重可视化功能
 - **内存优化**: 针对小程序环境的内存管理
 - **模块化加载**: 支持按需加载组件
-- **自定义激活函数**: 支持 ReLU、GELU、Swish 等
+- **文本生成**: 多种采样策略(贪心、Top-K、Top-P) ⭐
 
 ### Python 版本高级功能
+- **LLaMA2完整实现**: 支持7B/13B/70B等多种配置 ⭐
+- **分组查询注意力(GQA)**: 高效的注意力机制 ⭐
+- **RMSNorm和SwiGLU**: 现代LLM的关键组件 ⭐
+- **旋转位置编码(RoPE)**: 支持更长序列的位置编码 ⭐
+- **文本生成**: 完整的生成功能，支持多种采样策略 ⭐
 - **GPU 加速**: 完整的 CUDA 支持和混合精度训练
 - **分布式训练**: 支持多 GPU 和多节点训练（计划中）
 - **模型量化**: 支持 INT8 量化和动态量化
@@ -423,10 +506,37 @@ jupyter notebook notebooks/
 </html>
 ```
 
+### LLaMA2 Web应用示例 ⭐
+```javascript
+// 使用LLaMA2进行实时文本生成
+const { LLaMA2Config, LLaMA2ForCausalLM } = require('./learning/transformer-js/models/llama2');
+
+// 创建优化的LLaMA2模型
+const config = LLaMA2Config.miniprogram();
+const model = new LLaMA2ForCausalLM(config);
+
+// 文本生成函数
+function generateText(prompt, options = {}) {
+  const promptTokens = tokenize(prompt);
+  const generated = model.generate(promptTokens, {
+    maxNewTokens: options.maxLength || 20,
+    temperature: options.temperature || 0.8,
+    doSample: true
+  });
+
+  return detokenize(generated);
+}
+
+// 使用示例
+const userInput = "今天天气很好";
+const response = generateText(userInput, { maxLength: 30 });
+console.log('AI回复:', response);
+```
+
 ### 微信小程序示例
 ```javascript
 // pages/transformer/transformer.js
-const { createTransformer, getConfig } = require('../../learning/transformer-js/core/transformer');
+const { LLaMA2Config, LLaMA2ForCausalLM } = require('../../learning/transformer-js/models/llama2');
 
 Page({
   data: {
@@ -435,20 +545,23 @@ Page({
   },
 
   onLoad() {
-    // 初始化模型
-    const config = getConfig('miniprogram');
+    // 初始化LLaMA2模型
+    const config = LLaMA2Config.miniprogram();
     this.setData({
-      model: createTransformer(config)
+      model: new LLaMA2ForCausalLM(config)
     });
   },
 
   processInput(e) {
     const inputText = e.detail.value;
     const tokens = this.tokenize(inputText);
-    const result = this.data.model.forward([tokens]);
+    const generated = this.data.model.generate(tokens, {
+      maxNewTokens: 15,
+      temperature: 0.7
+    });
 
     this.setData({
-      result: this.formatOutput(result)
+      result: this.detokenize(generated)
     });
   }
 });
@@ -551,9 +664,9 @@ pre-commit install  # 安装代码检查钩子
 ## 📈 项目统计
 
 ### 代码统计
-- **总代码行数**: 约 15,000+ 行
-- **JavaScript 代码**: 约 8,000 行
-- **Python 代码**: 约 7,000 行
+- **总代码行数**: 约 20,000+ 行 ⭐ (新增LLaMA2实现)
+- **JavaScript 代码**: 约 10,000+ 行 ⭐ (新增LLaMA2模型)
+- **Python 代码**: 约 10,000+ 行 ⭐ (新增LLaMA2模型)
 - **文档和注释**: 约 40% 的代码为注释和文档
 - **测试覆盖率**: 目标 >85%
 
@@ -562,6 +675,10 @@ pre-commit install  # 安装代码检查钩子
 |----------|----------------|-------------|------|
 | 基础 Transformer | ✅ 100% | ✅ 100% | 完成 |
 | 注意力机制 | ✅ 100% | ✅ 100% | 完成 |
+| **LLaMA2 模型** | ✅ **95%** ⭐ | ✅ **100%** ⭐ | **新增完成** |
+| **分组查询注意力(GQA)** | ✅ **100%** ⭐ | ✅ **100%** ⭐ | **新增完成** |
+| **RMSNorm归一化** | ✅ **100%** ⭐ | ✅ **100%** ⭐ | **新增完成** |
+| **SwiGLU激活函数** | ✅ **100%** ⭐ | ✅ **100%** ⭐ | **新增完成** |
 | BERT 模型 | ✅ 90% | ✅ 95% | 基本完成 |
 | GPT 模型 | ✅ 85% | ✅ 90% | 进行中 |
 | T5 模型 | 🔄 60% | 🔄 70% | 开发中 |
